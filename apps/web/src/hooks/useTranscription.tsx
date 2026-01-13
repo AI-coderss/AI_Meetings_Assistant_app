@@ -1,17 +1,34 @@
 import { useEffect, useRef, useState } from 'react'
 import socket from '../lib/socket'
 
-export default function useTranscription(roomId: string | null) {
+interface TranscriptSegment {
+  speaker: string
+  speakerName?: string
+  text: string
+  timestamp: number
+  partial?: boolean
+  final?: boolean
+}
+
+interface UseTranscriptionReturn {
+  start: () => Promise<void>
+  stop: () => void
+  isRecording: boolean
+  segments: TranscriptSegment[]
+  clear: () => void
+}
+
+export default function useTranscription(roomId: string | null): UseTranscriptionReturn {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const [isRecording, setIsRecording] = useState(false)
-  const [segments, setSegments] = useState<Array<any>>([])
+  const [segments, setSegments] = useState<TranscriptSegment[]>([])
 
   useEffect(() => {
-    function onSegment(data: any) {
+    function onSegment(data: TranscriptSegment) {
       setSegments(s => [...s, data])
     }
 
-    function onFinal(data: any) {
+    function onFinal(data: TranscriptSegment) {
       setSegments(s => [...s, { ...data, final: true }])
     }
 
@@ -24,33 +41,39 @@ export default function useTranscription(roomId: string | null) {
     }
   }, [])
 
-  async function start() {
+  async function start(): Promise<void> {
     if (!roomId) return
-    // request mic access
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' })
-    mediaRecorderRef.current = mr
+    try {
+      // request mic access
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+      mediaRecorderRef.current = mr
 
-    mr.ondataavailable = (ev) => {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const base64 = (reader.result as string).split(',')[1]
-        socket.emit('transcription:audio', { roomId, data: base64 })
+      mr.ondataavailable = (ev) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+          const result = reader.result as string
+          const base64 = result.split(',')[1]
+          socket.emit('transcription:audio', { roomId, data: base64 })
+        }
+        reader.readAsDataURL(ev.data)
       }
-      reader.readAsDataURL(ev.data)
+
+      mr.onstart = () => setIsRecording(true)
+      mr.onstop = () => setIsRecording(false)
+
+      socket.emit('transcription:start', { roomId }, (res: any) => {
+        // ignore
+      })
+
+      mr.start(1000) // emit every 1s
+    } catch (error) {
+      console.error('Failed to start transcription:', error)
+      setIsRecording(false)
     }
-
-    mr.onstart = () => setIsRecording(true)
-    mr.onstop = () => setIsRecording(false)
-
-    socket.emit('transcription:start', { roomId }, (res: any) => {
-      // ignore
-    })
-
-    mr.start(1000) // emit every 1s
   }
 
-  function stop() {
+  function stop(): void {
     if (!roomId) return
     mediaRecorderRef.current?.stop()
     socket.emit('transcription:stop', { roomId })

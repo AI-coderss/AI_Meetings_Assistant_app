@@ -1,0 +1,96 @@
+@import './_variables.scss';
+@import './_mixins.scss';
+@import './components/_participant.scss';
+
+:root {
+  --bg: #f8fafc;
+  --text: #0b0b0b;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: rgba(255,255,255,0.8);
+  box-shadow: $shadow-soft;
+}
+
+.meeting-area {
+  flex: 1;
+  display: flex;
+  position: relative;
+}
+
+.participant-grid {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px;
+}
+
+.participant-grid-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.transcript-panel {
+  width: 360px;
+  border-left: 1px solid rgba(0,0,0,0.06);
+  padding: 12px;
+  display: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.transcript-panel.open {
+  display: flex;
+}
+
+.transcript-panel-content { flex: 1; overflow: auto; }
+
+.segment { padding: 8px; border-bottom: 1px solid rgba(0,0,0,0.04); }
+.segment .meta { font-size: 12px; color: rgba(0,0,0,0.6); margin-bottom: 6px }
+.segment .text { font-size: 14px }
+
+.segment.partial { opacity: 0.85 }
+.segment.final { font-weight: 600 }
+
+.page-wrapper {
+  padding: 24px;
+}
+
+.bottom-bar {
+  height: 64px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.8);
+  box-shadow: $shadow-soft;
+}
+
+.btn {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  background: $color-accent;
+  color: white;
+}

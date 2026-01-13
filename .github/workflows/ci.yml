@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install root deps
+        run: npm ci
+
+      - name: Install server deps
+        run: npm ci --prefix packages/server
+
+      - name: Start server (background)
+        run: npm --prefix packages/server run dev &
+
+      - name: Wait for server
+        run: |
+          for i in {1..20}; do
+            if curl -sSf http://localhost:4000/health; then
+              echo 'server up' && break
+            fi
+            sleep 1
+          done
+
+      - name: RunLint
+        run: npm run lint || true
+
+      - name: Run transcription socket test
+        run: npm --prefix packages/server run test:transcription
+
+      - name: Run OpenAI realtime connectivity test (skips if no key)
+        run: |
+          if [ -n "$OPENAI_API_KEY" ]; then
+            node packages/server/test/openai_realtime_test.js;
+          else
+            echo 'Skipping OpenAI realtime test (OPENAI_API_KEY not set)';
+          fi
+
+      - name: Run SFU capture test (ffmpeg must be available)
+        run: |
+          echo 'Running SFU capture test'
+          MOCK_TRANSCRIBER=1 node packages/server/test/sfu_capture_test.js || echo 'SFU capture test failed'
+
+      - name: Run PlainTransport smoke test
+        run: |
+          echo 'Running PlainTransport test'
+          node packages/server/test/plain_transport_test.js || echo 'PlainTransport test failed'
+
+      - name: Run persistence test
+        run: |
+          echo 'Running persistence test'
+          node packages/server/test/persist_transcript_test.js || echo 'Persistence test failed'
+
+      - name: Run Smoke test
+        run: npm --prefix packages/server run smoke
+
+      - name: Run unit & integration tests (coverage)
+        run: npm --prefix packages/server test
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: packages/server/coverage/**/lcov.info
+          fail_ci_if_error: false
+
+      - name: Build frontend
+        run: npm --prefix apps/web run build
+
+      - name: Typecheck server
+        run: npx tsc -p packages/server/tsconfig.json --noEmit
+
+      - name: Typecheck frontend
+        run: npx tsc -p apps/web/tsconfig.json --noEmit

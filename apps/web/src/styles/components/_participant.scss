@@ -1,0 +1,33 @@
+@import '../_variables.scss';
+@import '../_mixins.scss';
+
+.participant-card {
+  background: $color-glass;
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 180px;
+  min-height: 100px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  box-shadow: $shadow-soft;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  border: 2px solid transparent;
+}
+
+.participant-card.active {
+  transform: scale(1.02);
+  border-color: $color-accent;
+  box-shadow: 0 6px 40px rgba(15,98,254,0.12);
+}
+
+.participant-card .avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(0,0,0,0.05));
+}
+
+.participant-card .meta .name {
+  font-weight: 600;
+}

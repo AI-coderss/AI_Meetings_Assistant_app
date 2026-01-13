@@ -1,0 +1,26 @@
+{
+  "name": "ai-meetings-assistant-app",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "concurrently \"npm:dev:web\" \"npm:dev:server\"",
+    "dev:web": "npm --prefix apps/web run dev",
+    "dev:server": "npm --prefix packages/server run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "eslint": "^8.50.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "prettier": "^2.10.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "supertest": "^6.4.0",
+    "nyc": "^15.1.0"
+  },
+  "scripts": {
+    "lint": "eslint \"**/*.{ts,tsx,js,jsx}\" --max-warnings=0",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "test": "jest --coverage"
+  }
+}
